@@ -93,3 +93,5 @@ src/
 - 코드 품질을 높이기 위해 C++의 경우 STL을 필요한 경우 사용하셔도 됩니다.
 
 - Refactoring 최초제출
+- Branch 전략
+ -. Main - Refactoring - TC - Feature
