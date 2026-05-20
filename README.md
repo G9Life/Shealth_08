@@ -95,3 +95,5 @@ src/
 - Refactoring 최초제출
 - Branch 전략
  -. Main - Refactoring - TC - Feature
+
+ - TC Branch 최초제출
