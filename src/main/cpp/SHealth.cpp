@@ -53,6 +53,14 @@ double SHealth::getBmiRatio(int ageDecade, int categoryCode) const {
     return getCategoryPercent(ageDecade, categoryCode);
 }
 
+SHealth::AgeDecadeDistribution SHealth::getDistributionForAgeDecade(int ageDecade) const {
+    const auto distributionIt = distributionsByDecade_.find(ageDecade);
+    if (distributionIt == distributionsByDecade_.end()) {
+        return AgeDecadeDistribution{};
+    }
+    return distributionIt->second;
+}
+
 double SHealth::sumCategoryPercents(int ageDecade) const {
     double total = 0.0;
     for (BmiCategory category : kAllBmiCategories) {

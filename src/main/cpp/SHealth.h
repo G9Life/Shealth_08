@@ -25,6 +25,7 @@ public:
     double getCategoryPercent(int ageDecade, BmiCategory category) const;
     double getCategoryPercent(int ageDecade, int categoryCode) const;
     double getBmiRatio(int ageDecade, int categoryCode) const;
+    AgeDecadeDistribution getDistributionForAgeDecade(int ageDecade) const;
     double sumCategoryPercents(int ageDecade) const;
 
     static bool isValidRecord(int id, int age, double heightCm);

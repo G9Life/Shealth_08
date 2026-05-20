@@ -238,6 +238,20 @@ TEST_F(SHealthExceptionFixture, GivenUnloadedAnalyzer_WhenQueryCategoryPercent_T
     EXPECT_EQ(decadeSum, 0.0);
 }
 
+TEST_F(SHealthExceptionFixture, GivenUnloadedAnalyzer_WhenGetDistributionForAgeDecade_ThenAllPercentsAreZero) {
+    // Given: analyzer without loadAndCalculate
+    SHealth analyzer;
+
+    // When: full distribution is requested for a valid decade
+    const SHealth::AgeDecadeDistribution distribution = analyzer.getDistributionForAgeDecade(50);
+
+    // Then: every category percent is zero
+    EXPECT_EQ(distribution.underweightPercent, 0.0);
+    EXPECT_EQ(distribution.normalPercent, 0.0);
+    EXPECT_EQ(distribution.overweightPercent, 0.0);
+    EXPECT_EQ(distribution.obesityPercent, 0.0);
+}
+
 TEST_F(SHealthExceptionFixture, GivenMissingPreferredPath_WhenResolveDataFilePath_ThenReturnsOriginalPath) {
     // Given: file absent from cwd and ../ (resolveDataFilePath fallback behavior)
     const std::string missingPath = "definitely_missing_shealth.dat";
@@ -287,6 +301,36 @@ TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenUsingLegacyCategoryCo
     // Then: all APIs return the same value
     EXPECT_EQ(viaEnum, viaLegacyCode);
     EXPECT_EQ(viaBmiRatio, viaEnum);
+}
+
+TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenGetDistributionForAgeDecade50_ThenMatchesCategoryPercentApi) {
+    // Given: shealth.dat is loaded (SetUp)
+    // When: decade-50 distribution is fetched in one call
+    const SHealth::AgeDecadeDistribution distribution = analyzer_.getDistributionForAgeDecade(50);
+
+    // Then: each field matches getCategoryPercent for the same decade
+    EXPECT_EQ(distribution.underweightPercent,
+              analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Underweight));
+    EXPECT_EQ(distribution.normalPercent, analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Normal));
+    EXPECT_EQ(distribution.overweightPercent,
+              analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Overweight));
+    EXPECT_EQ(distribution.obesityPercent, analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Obesity));
+    EXPECT_EQ(static_cast<int>(std::lround(
+                  distribution.underweightPercent + distribution.normalPercent +
+                  distribution.overweightPercent + distribution.obesityPercent)),
+              100);
+}
+
+TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenGetDistributionForInvalidAgeDecade_ThenAllPercentsAreZero) {
+    // Given: shealth.dat is loaded (SetUp); 25 is not a valid decade key (20–70 step 10)
+    // When: distribution is requested for an out-of-range decade
+    const SHealth::AgeDecadeDistribution distribution = analyzer_.getDistributionForAgeDecade(25);
+
+    // Then: no cached entry → default zero distribution
+    EXPECT_EQ(distribution.underweightPercent, 0.0);
+    EXPECT_EQ(distribution.normalPercent, 0.0);
+    EXPECT_EQ(distribution.overweightPercent, 0.0);
+    EXPECT_EQ(distribution.obesityPercent, 0.0);
 }
 
 // --- Age-decade average weight imputation (03-02) ---
@@ -383,6 +427,12 @@ TEST_F(SHealthAgeImputationFixture,
     EXPECT_EQ(normalPercent, 33);
     EXPECT_EQ(overweightPercent, 33);
     EXPECT_EQ(static_cast<int>(std::lround(analyzer_.sumCategoryPercents(50))), 100);
+
+    const SHealth::AgeDecadeDistribution distribution = analyzer_.getDistributionForAgeDecade(50);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.underweightPercent)), 33);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.normalPercent)), 33);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.overweightPercent)), 33);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.obesityPercent)), 0);
 }
 
 TEST_F(SHealthAgeImputationFixture,
