@@ -4,10 +4,13 @@
 |------|------|
 | **프로젝트명** | SHealth BMI (C++) |
 | **작성일** | 2026-05-20 |
-| **단계** | Activities 3 — TDD / 단위테스트 |
+| **단계** | Activities 3 — TDD / 단위테스트 (03-01) |
 | **대상** | `SHealth::computeBmi`, `SHealth::classifyBmi`, `loadAndCalculate` 파이프라인 |
+| **실행 진입점** | `src/main/cpp/SHealthBMI.cpp` → `SHealth` 라이브러리 (`SHealth.cpp`) |
 | **테스트 파일** | `src/test/cpp/SHealthBMITest.cpp` |
+| **참고 자료** | `bmi.png`, `shealth.dat` |
 | **선행 문서** | [01_SHealth_08_프로젝트_분석_보고서.md](./01_SHealth_08_프로젝트_분석_보고서.md) · [02_리팩토링 통합보고서.md](./02_리팩토링%20통합보고서.md) |
+| **후속 문서** | [03-03단계 — 정상/저체중/과체중/비만 분류 TC.md](./03-03단계%20—%20정상·저체중·과체중·비만%20분류%20TC.md) · [03-02단계 — Age 평균치 보정 로직 TC.md](./03-02단계%20—%20Age%20평균치%20보정%20로직%20TC.md) |
 
 ---
 
@@ -15,34 +18,48 @@
 
 ### 1.1 작업 목적
 
-`SHealthBMI` 실행 파일이 사용하는 **BMI 계산·분류 로직**(`SHealth.cpp`)에 대해 Google Test 기반 단위테스트를 설계·구현하였다. 요구사항은 다음과 같다.
+`SHealthBMI` 실행 파일이 사용하는 **BMI 계산·4단계 분류 로직**에 대해 Google Test 기반 단위·통합 테스트를 설계·구현하였다.
 
 | 요구사항 | 충족 |
 |----------|------|
-| `TEST_F` 최소 5개 (BMI 계산 로직 중심) | ✅ 6개 (`SHealthBmiCalculationFixture`) |
-| `EXPECT_EQ` / `ASSERT_EQ`로 검증 | ✅ |
-| `shealth.dat` 기반, **경계값 포함** | ✅ |
+| `TEST_F` 최소 5개 (BMI 계산·분류 중심) | ✅ 6개 (`SHealthBmiCalculationFixture`) |
+| `EXPECT_EQ` / `ASSERT_EQ`로 BMI·분류 검증 | ✅ milli-BMI + `BmiCategory` |
+| `shealth.dat` 기반, **경계값 포함** | ✅ 8개 id + 이론 임계값 |
 | Given-When-Then 주석 구조 | ✅ 전 `TEST_F` 적용 |
-| `cmake --build build && ctest` Green | ✅ 9/9 통과 |
+| `cmake --build build && ctest` Green | ✅ 03-01 범위 9/9 통과 (전체 스위트 15/15) |
 
-### 1.2 검증 대상 로직
+### 1.2 BMI 정의 및 분류 기준
 
-BMI 관련 공개 API (`SHealth.h`):
+![BMI](../bmi.png)
 
-| API | 역할 |
-|-----|------|
-| `computeBmi(weightKg, heightCm)` | BMI = 체중(kg) ÷ (키(m))², 키 0이면 0.0 반환 |
-| `classifyBmi(bmi)` | BMI 구간 → `BmiCategory` enum |
-| `loadAndCalculate(filename)` | CSV 로드 → 체중 보정 → BMI 계산 → 연령대별 분포 |
+README·`bmi.png`와 구현(`SHealth.cpp`)의 분류 규칙:
 
-분류 임계값 (`SHealth.cpp` private 상수):
+| 구간 | README / 도메인 | 구현 조건 (`classifyBmi`) | `BmiCategory` 코드 |
+|------|-----------------|---------------------------|-------------------|
+| 저체중 | BMI ≤ 18.5 | `bmi <= 18.5` | `Underweight` (100) |
+| 정상 | 18.5 < BMI < 23 | `bmi < 23.0` (상위 구간 제외 후) | `Normal` (200) |
+| 과체중 | 23 ≤ BMI < 25 | `bmi < 25.0` | `Overweight` (300) |
+| 비만 | BMI ≥ 25 | 그 외 | `Obesity` (400) |
 
-| 구간 | 조건 | `BmiCategory` |
-|------|------|---------------|
-| 저체중 | BMI ≤ 18.5 | `Underweight` (100) |
-| 정상 | 18.5 < BMI < 23.0 | `Normal` (200) |
-| 과체중 | 23.0 ≤ BMI < 25.0 | `Overweight` (300) |
-| 비만 | BMI ≥ 25.0 | `Obesity` (400) |
+계산식:
+
+```
+BMI = weight(kg) / (height(m))²
+height(m) = height(cm) / 100
+height(cm) == 0 → BMI = 0.0
+```
+
+### 1.3 검증 대상 API
+
+| API | 접근 | 역할 |
+|-----|------|------|
+| `computeBmi(weightKg, heightCm)` | public static | BMI 산출 |
+| `classifyBmi(bmi)` | public static | BMI → `BmiCategory` |
+| `loadAndCalculate(filename)` | public | CSV 로드 → 체중 보정 → BMI → 연령대별 분포 |
+| `getCategoryPercent(ageDecade, category)` | public | 연령대·구간별 비율(%) |
+| `getBmiRatio` / legacy int code | public | 하위 호환 API |
+
+> `SHealthBMI.cpp`는 `loadAndCalculate` 후 연령대별 분포를 출력하는 `main`만 담당한다. 본 보고서의 검증 대상 로직은 `SHealth.cpp`에 있다.
 
 ---
 
@@ -52,18 +69,20 @@ BMI 관련 공개 API (`SHealth.h`):
 
 | Fixture | 용도 | SetUp |
 |---------|------|-------|
-| `SHealthBmiCalculationFixture` | 단위 레벨: `computeBmi` / `classifyBmi` | 없음 (정적 API만 사용) |
-| `SHealthLoadedDataFixture` | 통합: 실제 `shealth.dat` 로드 후 분포·API 검증 | `loadAndCalculate(resolveDataFilePath("shealth.dat"))` |
+| `SHealthBmiCalculationFixture` | 단위: `computeBmi` / `classifyBmi` | 없음 |
+| `SHealthLoadedDataFixture` | 통합: 실제 `shealth.dat` 로드 후 분포·API | `loadAndCalculate(resolveDataFilePath("shealth.dat"))` |
 
 ### 2.2 검증 전략
 
-#### 부동소수 BMI 값
+#### 부동소수 BMI
 
-`shealth.dat` 실측값(예: 79.5kg, 158.3cm)은 IEEE 754 표현 오차로 `EXPECT_DOUBLE_EQ`와 단순 `EXPECT_EQ(double)`가 불안정할 수 있다. 따라서:
+`shealth.dat` 실측값(예: 79.5 kg, 158.3 cm)은 IEEE 754 오차로 `EXPECT_DOUBLE_EQ`가 불안정할 수 있다.
 
-- **milli-BMI**: `round(bmi × 1000)`을 정수로 변환 후 `ASSERT_EQ` 비교
-- **카테고리**: `EXPECT_EQ(SHealth::classifyBmi(...), BmiCategory::…)` 로 enum 비교
-- **정확 표현 가능한 경계**: height = 100cm일 때 `computeBmi(18.5, 100.0) == 18.5` 등은 `EXPECT_EQ(double)` 직접 비교
+| 대상 | 방법 |
+|------|------|
+| BMI 수치 | **milli-BMI**: `round(bmi × 1000)` → `ASSERT_EQ` |
+| 분류 | `EXPECT_EQ(classifyBmi(...), BmiCategory::…)` |
+| 이론 경계 (height=100 cm) | `computeBmi(18.5, 100.0) == 18.5` 등 `EXPECT_EQ(double)` |
 
 #### 헬퍼 (익명 네임스페이스)
 
@@ -71,6 +90,17 @@ BMI 관련 공개 API (`SHealth.h`):
 int bmiToMilli(double bmi);
 int computeBmiMilli(double weightKg, double heightCm);
 ```
+
+### 2.3 카테고리별 커버리지 매트릭스
+
+| `BmiCategory` | 대표 TEST_F | shealth.dat id | 경계 |
+|---------------|-------------|----------------|------|
+| Obesity | #1 `GivenShealth93705…` | 93705 | 고BMI 대표 |
+| Normal | #2 `GivenShealth93711…` | 93711 | 정상 구간 |
+| Overweight | #3 `GivenShealth93708…` | 93708 | 과체중 구간 |
+| Underweight | #4 `GivenShealthUnderweight…` | 93795, 97948 | **18.5** 이하 |
+| Normal ↔ Overweight | #5 `GivenShealthNormalOverweight…` | 94663, 94457 | **23.0** 직전/이후 |
+| 전 구간 + 이론 경계 | #6 `GivenShealthObesityBoundary…` | 102210 + 100 cm | **25.0**, 키 0 |
 
 ---
 
@@ -80,11 +110,11 @@ int computeBmiMilli(double weightKg, double heightCm);
 
 | # | TEST_F 이름 | Given | When | Then |
 |---|-------------|-------|------|------|
-| 1 | `GivenShealth93705ObesityRow_WhenComputeBmi_ThenMilliMatchesExpected` | id=93705 (79.5kg, 158.3cm) | `computeBmi` | milli=31725, `Obesity` |
-| 2 | `GivenShealth93711NormalRow_WhenComputeBmi_ThenMilliAndCategoryMatch` | id=93711 (62.1kg, 170.6cm) | `computeBmi` + `classifyBmi` | milli=21337, `Normal` |
-| 3 | `GivenShealth93708OverweightRow_WhenComputeBmi_ThenMilliAndCategoryMatch` | id=93708 (53.5kg, 150.2cm) | `computeBmi` + `classifyBmi` | milli=23714, `Overweight` |
+| 1 | `GivenShealth93705ObesityRow_WhenComputeBmi_ThenMilliMatchesExpected` | id=93705 (79.5 kg, 158.3 cm) | `computeBmi` | milli=31725, `Obesity` |
+| 2 | `GivenShealth93711NormalRow_WhenComputeBmi_ThenMilliAndCategoryMatch` | id=93711 (62.1 kg, 170.6 cm) | `computeBmi` + `classifyBmi` | milli=21337, `Normal` |
+| 3 | `GivenShealth93708OverweightRow_WhenComputeBmi_ThenMilliAndCategoryMatch` | id=93708 (53.5 kg, 150.2 cm) | `computeBmi` + `classifyBmi` | milli=23714, `Overweight` |
 | 4 | `GivenShealthUnderweightAndNearBoundaryRows_WhenClassify_ThenExpectedCategories` | id=93795, 97948 | `classifyBmi` | 둘 다 `Underweight` |
-| 5 | `GivenShealthNormalOverweightBoundaryRows_WhenClassify_ThenExpectedCategories` | id=94663, 94457 | `classifyBmi` | `Normal` / `Overweight` (23.0 전후) |
+| 5 | `GivenShealthNormalOverweightBoundaryRows_WhenClassify_ThenExpectedCategories` | id=94663, 94457 | `classifyBmi` | `Normal` / `Overweight` |
 | 6 | `GivenShealthObesityBoundaryAndExactThresholds_WhenComputeAndClassify_ThenExpected` | id=102210 + 이론 경계 | `computeBmi` + `classifyBmi` | 24.9→Overweight, 25.0→Obesity, height=0→0.0 |
 
 ### 3.2 `SHealthLoadedDataFixture` — 데이터 파이프라인 (3개)
@@ -105,14 +135,14 @@ int computeBmiMilli(double weightKg, double heightCm);
 |------|-----|
 | 파일 | `shealth.dat` (프로젝트 루트) |
 | 형식 | CSV: `id,age,weight,height` |
-| 유효 레코드 수 | 4,821건 (헤더 제외, 검증 통과 건) |
+| 유효 레코드 수 | 4,821건 (헤더 제외, `isValidRecord` 통과) |
 | BMI 분포 (대략) | 저체중 78 · 정상 654 · 과체중 501 · 비만 3,589 |
 
 ### 4.2 테스트에 사용한 대표 행
 
-| id | weight (kg) | height (cm) | BMI (계산) | milli | 분류 | 선정 이유 |
-|----|-------------|-------------|------------|-------|------|-----------|
-| 93705 | 79.5 | 158.3 | 31.725 | 31725 | 비만 | 데이터셋 첫 행, 고BMI 대표 |
+| id | weight (kg) | height (cm) | BMI | milli | 분류 | 선정 이유 |
+|----|-------------|-------------|-----|-------|------|-----------|
+| 93705 | 79.5 | 158.3 | 31.725 | 31725 | 비만 | 데이터셋 첫 행, 고BMI |
 | 93711 | 62.1 | 170.6 | 21.337 | 21337 | 정상 | 정상 구간 대표 |
 | 93708 | 53.5 | 150.2 | 23.714 | 23714 | 과체중 | 과체중 구간 대표 |
 | 93795 | 44.5 | 168.6 | 15.655 | 15655 | 저체중 | weight>0 저체중 최초 샘플 |
@@ -121,13 +151,11 @@ int computeBmiMilli(double weightKg, double heightCm);
 | 94457 | 67.7 | 164.6 | 24.988 | 24988 | 과체중 | **25.0 경계** 직전 (<25) |
 | 102210 | 74.3 | 172.4 | 24.999 | 24999 | 과체중 | 비만 직전 (≥25 미만) |
 
-> id=93730 (weight=0)은 체중 보정 파이프라인 대상이나, 개별 BMI는 private 상태라 단위 `TEST_F`에서는 미검증. 통합 Fixture에서 분포 합계 100% 등으로 간접 검증.
-
 ### 4.3 이론 경계값 (height = 100 cm)
 
 | 체중 (kg) | BMI | 기대 분류 |
 |-----------|-----|-----------|
-| 18.5 | 18.5 | Underweight (경계 포함) |
+| 18.5 | 18.5 | Underweight (구현: ≤18.5) |
 | 22.9 | 22.9 | Normal |
 | 24.9 | 24.9 | Overweight |
 | 25.0 | 25.0 | Obesity |
@@ -135,7 +163,13 @@ int computeBmiMilli(double weightKg, double heightCm);
 
 ### 4.4 경계값 탐색 방법
 
-`shealth.dat` 전체를 스캔하여 임계값(18.5, 23.0, 25.0)에 **가장 근접한 유효 레코드**(weight>0, height>0)를 선정하였다. Python 스크립트로 milli 값을 사전 계산한 뒤 C++ 테스트 상수(`kShealth*`)에 반영하였다.
+`shealth.dat` 전체를 스캔하여 임계값 **18.5 / 23.0 / 25.0**에 가장 근접한 유효 레코드(weight>0, height>0)를 선정하였다. Python으로 milli 값을 사전 계산한 뒤 C++ 상수(`kShealth*`)에 반영하였다.
+
+```python
+# milli 검증 예시
+bmi = weight / ((height/100)**2)
+milli = round(bmi * 1000)  # 93705 → 31725
+```
 
 ---
 
@@ -157,6 +191,16 @@ TEST_F(SHealthBmiCalculationFixture, GivenShealth93705ObesityRow_WhenComputeBmi_
 }
 ```
 
+4구간 경계 일괄 검증 (#6):
+
+```cpp
+// Given: exact thresholds at 100 cm height
+EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(18.5, 100.0)), SHealth::BmiCategory::Underweight);
+EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(22.9, 100.0)), SHealth::BmiCategory::Normal);
+EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(24.9, 100.0)), SHealth::BmiCategory::Overweight);
+EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(25.0, 100.0)), SHealth::BmiCategory::Obesity);
+```
+
 ---
 
 ## 6. 빌드·실행 결과
@@ -168,19 +212,34 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+Windows (PowerShell):
+
+```powershell
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
 ### 6.2 결과 (2026-05-20)
 
+**03-01 범위 (BMI 계산·분류 9건)**
+
 ```
-100% tests passed, 0 tests failed out of 9
-Total Test time (real) = 8.31 sec
+100% tests passed, 0 tests failed out of 9  (CTest #1–#9)
 ```
 
-| # | 테스트 | 결과 |
-|---|--------|------|
+| # | Fixture | 결과 |
+|---|---------|------|
 | 1–6 | `SHealthBmiCalculationFixture.*` | Passed |
 | 7–9 | `SHealthLoadedDataFixture.*` | Passed |
 
-CTest `WORKING_DIRECTORY`는 `${CMAKE_SOURCE_DIR}`로 설정되어 있어, `shealth.dat`를 프로젝트 루트에서 직접 읽는다 (`resolveDataFilePath` fallback: `../shealth.dat`).
+**전체 테스트 스위트 (03-02 Age 보정 포함 15건)**
+
+```
+100% tests passed, 0 tests failed out of 15
+Total Test time (real) ≈ 7.3 sec
+```
+
+CTest `WORKING_DIRECTORY`는 `${CMAKE_SOURCE_DIR}` (`CMakeLists.txt`의 `gtest_discover_tests`)이므로 `shealth.dat`를 프로젝트 루트에서 직접 읽는다. `resolveDataFilePath`는 실패 시 `../shealth.dat` fallback을 시도한다.
 
 ---
 
@@ -188,8 +247,10 @@ CTest `WORKING_DIRECTORY`는 `${CMAKE_SOURCE_DIR}`로 설정되어 있어, `shea
 
 | 파일 | 변경 |
 |------|------|
-| `src/test/cpp/SHealthBMITest.cpp` | `TEST_F` 9개, milli-BMI 헬퍼, shealth.dat 상수, G-W-T 주석 |
-| `CMakeLists.txt` | 변경 없음 (기존 `gtest_discover_tests` 활용) |
+| `src/test/cpp/SHealthBMITest.cpp` | 03-01 `TEST_F` 9개, milli-BMI 헬퍼, `kShealth*` 상수, G-W-T 주석 |
+| `src/main/cpp/SHealth.cpp` | 변경 없음 (기존 구현 검증) |
+| `src/main/cpp/SHealthBMI.cpp` | 변경 없음 |
+| `CMakeLists.txt` | 변경 없음 (`gtest_discover_tests` 기존 설정) |
 
 ---
 
@@ -199,23 +260,24 @@ CTest `WORKING_DIRECTORY`는 `${CMAKE_SOURCE_DIR}`로 설정되어 있어, `shea
 
 | 영역 | 커버 여부 |
 |------|-----------|
-| `computeBmi` 정상·0 키 | ✅ |
+| `computeBmi` 정상·키 0 | ✅ |
 | `classifyBmi` 4구간·경계 | ✅ |
-| `shealth.dat` 실데이터 행 | ✅ (8개 id + 이론 경계) |
-| `loadAndCalculate` E2E | ✅ (Fixture 3건) |
-| `isValidRecord`, `belongsToAgeDecade` | ⚠️ 본 단계에서 제외 (이전 TC 정리 시 삭제됨, 필요 시 별도 `TEST` 추가 가능) |
-| 체중 0 보정 후 개별 BMI | ⚠️ private — 분포 합계로만 간접 검증 |
+| `shealth.dat` 실데이터 행 | ✅ (8 id + 이론 경계) |
+| `loadAndCalculate` E2E | ✅ (LoadedData Fixture 3건) |
+| 체중 0 보정 후 개별 BMI | ⚠️ 03-02에서 id=93730 등으로 보완 — [03-02 보고서](./03-02단계%20—%20Age%20평균치%20보정%20로직%20TC.md) |
+| `belongsToAgeDecade` | ⚠️ 03-02에서 검증 |
 
 ### 8.2 향후 확장 제안
 
 1. **파라미터화 테스트** (`TEST_P`): id·weight·height·expectedCategory 테이블 드리븐
-2. **체중 보정 전용 Fixture**: 보정 전후 BMI 변화를 테스트용 접근자 추가 시 검증 가능
-3. **골든 파일 테스트**: `SHealthBMI` stdout과 연령대별 기대 비율 스냅샷 비교
+2. **골든 파일 테스트**: `SHealthBMI` stdout과 연령대별 기대 비율 스냅샷 비교
+3. **테스트 접근자**: private `HealthRecord` BMI 직접 assert (필요 시)
 
 ---
 
 ## 9. 결론
 
-- BMI **계산식**과 **4단계 분류**, **경계값(18.5 / 23.0 / 25.0)** 을 `shealth.dat` 실측 샘플과 이론값으로 `TEST_F` 6건 이상 검증하였다.
-- 부동소수 오차는 **milli 정수 `ASSERT_EQ`** 로, 분류는 **`BmiCategory` `EXPECT_EQ`** 로 안정화하였다.
-- 전체 9개 테스트가 **Green** 상태이며, 리팩토링 이후 회귀 검증에 사용할 수 있다.
+- BMI **계산식**과 **저체중/정상/과체중/비만** 4단계 분류를 `shealth.dat` 실측 8건과 이론 임계값으로 `TEST_F` **6건** 이상 검증하였다.
+- 부동소수 오차는 **milli 정수 `ASSERT_EQ`**, 분류는 **`BmiCategory` `EXPECT_EQ`**로 안정화하였다.
+- 통합 Fixture **3건**으로 `loadAndCalculate` 파이프라인·레거시 API를 검증하였다.
+- 03-01 **9개** 테스트가 **Green**이며, 03-02 Age 보정 테스트와 합쳐 **전체 15개**가 회귀 검증에 사용된다.
