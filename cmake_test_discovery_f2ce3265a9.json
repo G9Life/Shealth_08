@@ -1,0 +1,141 @@
+{
+  "tests": 21,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "SHealthBmiCalculationFixture",
+      "tests": 6,
+      "testsuite": [
+        {
+          "name": "GivenShealth93705ObesityRow_WhenComputeBmi_ThenMilliMatchesExpected",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 66
+        },
+        {
+          "name": "GivenShealth93711NormalRow_WhenComputeBmi_ThenMilliAndCategoryMatch",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 80
+        },
+        {
+          "name": "GivenShealth93708OverweightRow_WhenComputeBmi_ThenMilliAndCategoryMatch",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 94
+        },
+        {
+          "name": "GivenShealthUnderweightAndNearBoundaryRows_WhenClassify_ThenExpectedCategories",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 108
+        },
+        {
+          "name": "GivenShealthNormalOverweightBoundaryRows_WhenClassify_ThenExpectedCategories",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 126
+        },
+        {
+          "name": "GivenShealthObesityBoundaryAndExactThresholds_WhenComputeAndClassify_ThenExpected",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 144
+        }
+      ]
+    },
+    {
+      "name": "SHealthExceptionFixture",
+      "tests": 6,
+      "testsuite": [
+        {
+          "name": "GivenNegativeId_WhenIsValidRecord_ThenReturnsFalse",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 172
+        },
+        {
+          "name": "GivenZeroOrNegativeAge_WhenIsValidRecord_ThenReturnsFalse",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 185
+        },
+        {
+          "name": "GivenNegativeHeight_WhenIsValidRecord_ThenReturnsFalse",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 199
+        },
+        {
+          "name": "GivenNonexistentDataFile_WhenLoadAndCalculate_ThenReturnsZero",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 211
+        },
+        {
+          "name": "GivenUnloadedAnalyzer_WhenQueryCategoryPercent_ThenReturnsZero",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 224
+        },
+        {
+          "name": "GivenMissingPreferredPath_WhenResolveDataFilePath_ThenReturnsOriginalPath",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 241
+        }
+      ]
+    },
+    {
+      "name": "SHealthLoadedDataFixture",
+      "tests": 3,
+      "testsuite": [
+        {
+          "name": "GivenLoadedShealthDat_WhenQueryAgeDecade20_ThenObesityPercentIsPositive",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 257
+        },
+        {
+          "name": "GivenLoadedShealthDat_WhenSummingCategoryPercents_ThenEachDecadeTotalsOneHundred",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 267
+        },
+        {
+          "name": "GivenLoadedShealthDat_WhenUsingLegacyCategoryCode_ThenPercentMatchesEnumApi",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 280
+        }
+      ]
+    },
+    {
+      "name": "SHealthAgeDecadeFixture",
+      "tests": 1,
+      "testsuite": [
+        {
+          "name": "GivenAgeDecadeBoundaryAges_WhenBelongsToAgeDecade_ThenExpectedMembership",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 312
+        }
+      ]
+    },
+    {
+      "name": "SHealthAgeImputationFixture",
+      "tests": 5,
+      "testsuite": [
+        {
+          "name": "GivenShealth93730ZeroWeightRow_WhenImputedWithDecade50Average_ThenBmiMilliAndCategoryMatch",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 338
+        },
+        {
+          "name": "GivenThreeMemberFixtureWithOneZeroWeight_WhenLoadAndCalculate_ThenPercentsReflectImputedBmis",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 355
+        },
+        {
+          "name": "GivenDecadeWithOnlyZeroWeights_WhenLoadAndCalculate_ThenNoImputationAndAllUnderweight",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 388
+        },
+        {
+          "name": "GivenLoadedShealthDat_WhenDecade50IncludesImputed93730_ThenObesityPercentIsPositive",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 406
+        },
+        {
+          "name": "GivenDecadeAverageExcludesZeroWeights_WhenComputingImputedBmi_ThenAverageMatchesTwoValidMembers",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 427
+        }
+      ]
+    }
+  ]
+}
