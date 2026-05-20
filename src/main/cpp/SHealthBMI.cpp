@@ -1,28 +1,40 @@
 #include "SHealth.h"
-#include <cstdio>
 
-int main() {
-    SHealth shealth;
-    shealth.calculateBmi("shealth.dat");
+#include <cstdlib>
+#include <iostream>
+#include <string>
 
-    printf("20 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           shealth.getBmiRatio(20, 100), shealth.getBmiRatio(20, 200),
-           shealth.getBmiRatio(20, 300), shealth.getBmiRatio(20, 400));
-    printf("30 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           shealth.getBmiRatio(30, 100), shealth.getBmiRatio(30, 200),
-           shealth.getBmiRatio(30, 300), shealth.getBmiRatio(30, 400));
-    printf("40 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           shealth.getBmiRatio(40, 100), shealth.getBmiRatio(40, 200),
-           shealth.getBmiRatio(40, 300), shealth.getBmiRatio(40, 400));
-    printf("50 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           shealth.getBmiRatio(50, 100), shealth.getBmiRatio(50, 200),
-           shealth.getBmiRatio(50, 300), shealth.getBmiRatio(50, 400));
-    printf("60 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           shealth.getBmiRatio(60, 100), shealth.getBmiRatio(60, 200),
-           shealth.getBmiRatio(60, 300), shealth.getBmiRatio(60, 400));
-    printf("70 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           shealth.getBmiRatio(70, 100), shealth.getBmiRatio(70, 200),
-           shealth.getBmiRatio(70, 300), shealth.getBmiRatio(70, 400));
+namespace {
 
-    return 0;
+constexpr const char* kDefaultDataFile = "shealth.dat";
+
+void printAgeDecadeDistribution(const SHealth& analyzer, int ageDecade) {
+    std::cout << ageDecade << " - underweight = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Underweight)
+              << ", normal = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Normal)
+              << ", overweight = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Overweight)
+              << ", obesity = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Obesity) << '\n';
+}
+
+}  // namespace
+
+int main(int argc, char* argv[]) {
+    const std::string requestedPath = (argc > 1) ? argv[1] : kDefaultDataFile;
+    const std::string dataFilePath = SHealth::resolveDataFilePath(requestedPath);
+
+    SHealth analyzer;
+    const size_t recordCount = analyzer.loadAndCalculate(dataFilePath);
+    if (recordCount == 0) {
+        std::cerr << "Failed to load health records from: " << dataFilePath << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    SHealth::forEachAgeDecade([&analyzer](int ageDecade) {
+        printAgeDecadeDistribution(analyzer, ageDecade);
+    });
+
+    return EXIT_SUCCESS;
 }

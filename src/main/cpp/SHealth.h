@@ -1,28 +1,50 @@
 #pragma once
 
+#include <array>
 #include <string>
+#include <unordered_map>
 #include <vector>
+
+#include "AgeDecadePolicy.h"
+#include "BmiTypes.h"
+#include "HealthRecord.h"
 
 class SHealth {
 public:
-    int calculateBmi(const std::string& filename);
-    double getBmiRatio(int ageClass, int type);
+    static constexpr int kMinAgeDecade = AgeDecadePolicy::kMinAgeDecade;
+    static constexpr int kMaxAgeDecade = AgeDecadePolicy::kMaxAgeDecade;
+    static constexpr int kAgeDecadeSpan = AgeDecadePolicy::kAgeDecadeSpan;
+
+    using BmiCategory = ::BmiCategory;
+    static constexpr std::array<BmiCategory, 4> kAllBmiCategories = ::kAllBmiCategories;
+
+    using HealthRecord = ::HealthRecord;
+    using AgeDecadeDistribution = ::AgeDecadeDistribution;
+
+    size_t loadAndCalculate(const std::string& filename);
+    double getCategoryPercent(int ageDecade, BmiCategory category) const;
+    double getCategoryPercent(int ageDecade, int categoryCode) const;
+    double getBmiRatio(int ageDecade, int categoryCode) const;
+    AgeDecadeDistribution getDistributionForAgeDecade(int ageDecade) const;
+    double sumCategoryPercents(int ageDecade) const;
+    AgeDecadeDistribution getOverallDistribution() const;
+    double getOverallCategoryPercent(BmiCategory category) const;
+    double sumOverallCategoryPercents() const;
+    std::vector<HealthRecord> getNormalBmiRecords() const;
+
+    static bool isValidRecord(int id, int age, double heightCm);
+    static BmiCategory classifyBmi(double bmi);
+    static double computeBmi(double weightKg, double heightCm);
+    static bool belongsToAgeDecade(int age, int ageDecade);
+    static std::string resolveDataFilePath(const std::string& preferredPath);
+
+    template <typename Callback>
+    static void forEachAgeDecade(Callback&& callback) {
+        AgeDecadePolicy::forEachAgeDecade(std::forward<Callback>(callback));
+    }
 
 private:
-    int count = 0;
-    int ages[10000];
-    double heights[10000];
-    double weights[10000];
-    double bmis[10000];
-
-    double underweight20 = 0, underweight30 = 0, underweight40 = 0;
-    double underweight50 = 0, underweight60 = 0, underweight70 = 0;
-    double normalweight20 = 0, normalweight30 = 0, normalweight40 = 0;
-    double normalweight50 = 0, normalweight60 = 0, normalweight70 = 0;
-    double overweight20 = 0, overweight30 = 0, overweight40 = 0;
-    double overweight50 = 0, overweight60 = 0, overweight70 = 0;
-    double obesity20 = 0, obesity30 = 0, obesity40 = 0;
-    double obesity50 = 0, obesity60 = 0, obesity70 = 0;
-
-    std::vector<std::string> split(const std::string& line, char delimiter);
+    std::vector<HealthRecord> records_;
+    std::unordered_map<int, AgeDecadeDistribution> distributionsByDecade_;
+    AgeDecadeDistribution overallDistribution_;
 };
