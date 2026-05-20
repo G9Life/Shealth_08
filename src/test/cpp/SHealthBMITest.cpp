@@ -48,6 +48,8 @@ constexpr int kShealth102210BmiMilli = 24999;
 
 class SHealthBmiCalculationFixture : public ::testing::Test {};
 
+class SHealthExceptionFixture : public ::testing::Test {};
+
 class SHealthLoadedDataFixture : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -165,6 +167,91 @@ TEST_F(SHealthBmiCalculationFixture, GivenShealthObesityBoundaryAndExactThreshol
     EXPECT_EQ(SHealth::classifyBmi(exactOverweightMaxBmi), SHealth::BmiCategory::Overweight);
     EXPECT_EQ(SHealth::classifyBmi(exactObesityMinBmi), SHealth::BmiCategory::Obesity);
     EXPECT_EQ(SHealth::classifyBmi(zeroHeightBmi), SHealth::BmiCategory::Underweight);
+}
+
+TEST_F(SHealthExceptionFixture, GivenNegativeId_WhenIsValidRecord_ThenReturnsFalse) {
+    // Given: shealth.dat rejects negative id (isValidRecord: id >= 0)
+    const int invalidId = -1;
+    const int validAge = 66;
+    const double validHeightCm = 158.3;
+
+    // When: record validity is checked
+    const bool isValid = SHealth::isValidRecord(invalidId, validAge, validHeightCm);
+
+    // Then: record is rejected
+    EXPECT_EQ(isValid, false);
+}
+
+TEST_F(SHealthExceptionFixture, GivenZeroOrNegativeAge_WhenIsValidRecord_ThenReturnsFalse) {
+    // Given: age must be positive (shealth.dat uses ages 20–70+)
+    const int validId = 93705;
+    const double validHeightCm = 158.3;
+
+    // When: age is zero or negative
+    const bool zeroAgeValid = SHealth::isValidRecord(validId, 0, validHeightCm);
+    const bool negativeAgeValid = SHealth::isValidRecord(validId, -5, validHeightCm);
+
+    // Then: both are invalid
+    EXPECT_EQ(zeroAgeValid, false);
+    EXPECT_EQ(negativeAgeValid, false);
+}
+
+TEST_F(SHealthExceptionFixture, GivenNegativeHeight_WhenIsValidRecord_ThenReturnsFalse) {
+    // Given: height must be non-negative (CSV may still carry invalid rows)
+    const int validId = 93711;
+    const int validAge = 56;
+
+    // When: height is below zero
+    const bool isValid = SHealth::isValidRecord(validId, validAge, -0.1);
+
+    // Then: record is rejected before BMI calculation
+    EXPECT_EQ(isValid, false);
+}
+
+TEST_F(SHealthExceptionFixture, GivenNonexistentDataFile_WhenLoadAndCalculate_ThenReturnsZero) {
+    // Given: a path that does not exist under project root or ../ fallback
+    SHealth analyzer;
+    const std::string missingPath = "nonexistent_shealth_fixture_xyz.dat";
+
+    // When: load is attempted
+    const size_t recordCount = analyzer.loadAndCalculate(missingPath);
+
+    // Then: pipeline aborts with zero records
+    ASSERT_EQ(recordCount, 0u);
+    EXPECT_EQ(analyzer.getCategoryPercent(20, SHealth::BmiCategory::Normal), 0.0);
+}
+
+TEST_F(SHealthExceptionFixture, GivenUnloadedAnalyzer_WhenQueryCategoryPercent_ThenReturnsZero) {
+    // Given: analyzer without loadAndCalculate (no distributions)
+    SHealth analyzer;
+
+    // When: category percent is queried for a valid decade
+    const double normalPercent = analyzer.getCategoryPercent(20, SHealth::BmiCategory::Normal);
+    const double legacyPercent = analyzer.getCategoryPercent(20, 200);
+    const double ratio = analyzer.getBmiRatio(20, 200);
+    const double decadeSum = analyzer.sumCategoryPercents(20);
+
+    // Then: all distribution APIs yield zero
+    EXPECT_EQ(normalPercent, 0.0);
+    EXPECT_EQ(legacyPercent, 0.0);
+    EXPECT_EQ(ratio, 0.0);
+    EXPECT_EQ(decadeSum, 0.0);
+}
+
+TEST_F(SHealthExceptionFixture, GivenMissingPreferredPath_WhenResolveDataFilePath_ThenReturnsOriginalPath) {
+    // Given: file absent from cwd and ../ (resolveDataFilePath fallback behavior)
+    const std::string missingPath = "definitely_missing_shealth.dat";
+
+    // When: path resolution is attempted
+    const std::string resolvedPath = SHealth::resolveDataFilePath(missingPath);
+
+    // Then: preferred path is returned unchanged for caller handling
+    ASSERT_EQ(resolvedPath, missingPath);
+
+    const std::string shealthResolved = SHealth::resolveDataFilePath("shealth.dat");
+    const bool shealthFound =
+        shealthResolved == "shealth.dat" || shealthResolved == "../shealth.dat";
+    EXPECT_EQ(shealthFound, true);
 }
 
 TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenQueryAgeDecade20_ThenObesityPercentIsPositive) {

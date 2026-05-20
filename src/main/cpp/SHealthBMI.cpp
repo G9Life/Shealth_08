@@ -1,6 +1,7 @@
 #include "SHealth.h"
 
-#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <string>
 
 namespace {
@@ -8,12 +9,14 @@ namespace {
 constexpr const char* kDefaultDataFile = "shealth.dat";
 
 void printAgeDecadeDistribution(const SHealth& analyzer, int ageDecade) {
-    printf("%d - underweight = %f, normal = %f, overweight = %f, obesity = %f\n",
-           ageDecade,
-           analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Underweight),
-           analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Normal),
-           analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Overweight),
-           analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Obesity));
+    std::cout << ageDecade << " - underweight = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Underweight)
+              << ", normal = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Normal)
+              << ", overweight = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Overweight)
+              << ", obesity = "
+              << analyzer.getCategoryPercent(ageDecade, SHealth::BmiCategory::Obesity) << '\n';
 }
 
 }  // namespace
@@ -23,11 +26,15 @@ int main(int argc, char* argv[]) {
     const std::string dataFilePath = SHealth::resolveDataFilePath(requestedPath);
 
     SHealth analyzer;
-    analyzer.loadAndCalculate(dataFilePath);
+    const size_t recordCount = analyzer.loadAndCalculate(dataFilePath);
+    if (recordCount == 0) {
+        std::cerr << "Failed to load health records from: " << dataFilePath << std::endl;
+        return EXIT_FAILURE;
+    }
 
     SHealth::forEachAgeDecade([&analyzer](int ageDecade) {
         printAgeDecadeDistribution(analyzer, ageDecade);
     });
 
-    return 0;
+    return EXIT_SUCCESS;
 }
