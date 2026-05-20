@@ -1,0 +1,115 @@
+# SHealth_08 — Samsung Health BMI Statistics (C++17)
+
+## Project purpose
+삼성 헬스 스타일의 BMI 통계 프로그램. CSV(`shealth.dat`)에서 사용자 데이터를 읽고, 나이대별 저체중/정상/과체중/비만 비율(%)을 계산한다. 기존 코드에는 의도된 코드 스멜이 있으며, TDD·클린코드·SRP 리팩토링 실습이 목표다.
+
+## Tech stack & build
+- **Language**: C++17 (`CMAKE_CXX_STANDARD 17`)
+- **Build**: CMake 3.10+, Google Test는 `FetchContent`로 자동 다운로드
+- **Targets**: `shealth_lib` (라이브러리), `SHealthBMI` (실행), `SHealthBMITest` (테스트)
+
+```bash
+mkdir build && cd build && cmake .. && cmake --build .
+./SHealthBMI          # 또는 build/Debug/SHealthBMI.exe (Windows)
+cd build && ctest
+```
+
+## Directory layout (변경 시 이 구조 유지)
+```
+src/main/cpp/   SHealth.h, SHealth.cpp, SHealthBMI.cpp
+src/test/cpp/   SHealthBMITest.cpp
+shealth.dat     입력 데이터 (프로젝트 루트)
+CMakeLists.txt
+```
+
+- 헤더/구현은 `src/main/cpp/`에 둔다.
+- 새 도메인 클래스를 추가할 때는 `CMakeLists.txt`의 `shealth_lib` 소스 목록을 반드시 갱신한다.
+- `main`은 `SHealthBMI.cpp`에만 둔다.
+
+## Domain rules (비즈니스 로직 — README 기준, 반드시 준수)
+
+### Input
+- CSV 헤더: `id,age,weight,height`
+- 각 행: ID, 나이, 체중(kg), 키(cm)
+
+### BMI
+- `BMI = weight_kg / (height_m)²`, `height_m = height_cm / 100`
+
+### Classification (경계값 포함 여부를 테스트와 README에 맞출 것)
+| 구분 | 조건 |
+|------|------|
+| 저체중 | BMI ≤ 18.5 |
+| 정상체중 | 18.5 < BMI < 23 |
+| 과체중 | 23 ≤ BMI < 25 |
+| 비만 | BMI ≥ 25 |
+
+### Age group (10년 단위)
+- 연령대 `a` (20, 30, …, 70): `age >= a && age < a + 10`
+- 통계는 해당 연령대 인원 대비 **백분율(%)** 로 산출
+
+### Missing data imputation
+- **체중 0**: 같은 연령대에서 체중이 0이 아닌 값들의 평균으로 대체. 평균 계산 시 weight=0 레코드는 제외.
+- **키 0** (기능 개선 예정): 체중과 동일한 방식으로 연령대 평균 키로 보정
+
+### Planned features (README Activities 4)
+리팩토링 시 아래를 염두에 두고 SRP로 분리할 것:
+1. 특정 연령대 BMI 분포 비율 조회
+2. Height=0 평균 보정
+3. BMI 정상 범위 사용자 목록 조회
+4. 전체 사용자 대비 각 BMI 범주 비율
+
+## Refactoring & code quality guidelines
+
+### 우선 제거할 코드 스멜 (현재 `SHealth` 기준)
+- Magic number: `type` 100/200/300/400, BMI 임계값, 배열 크기 10000
+- 연령대×카테고리별 중복 멤버 변수 (`underweight20`, `normalweight30`, …)
+- God class: 파일 I/O, 파싱, 보정, BMI 계산, 통계, 조회가 한 클래스에 집중
+- `getBmiRatio`의 긴 if-else 체인
+- 고정 크기 C 배열 → `std::vector` 등 STL 컨테이너 검토
+- `printf` vs 프로젝트 나머지 `iostream` 스타일 — 리팩토링 시 일관성 유지
+
+### 설계 원칙
+- **SRP**: 예) `UserRecord`, `BmiCalculator`, `AgeGroupStatistics`, `CsvReader`, `DataImputer` 등 책임별 분리
+- **DRY**: 연령대·카테고리 반복 로직은 데이터 구조(맵/벡터/enum)로 통합
+- **의미 있는 이름**: `type` 100 대신 `BmiCategory::Underweight` 등 enum 사용
+- **함수 분리**: 한 함수는 한 가지 일만 (파싱 / 보정 / BMI 계산 / 집계 / 출력)
+- **최소 변경**: 요청 범위 밖 파일·기능은 건드리지 않음
+- **STL 허용**: `vector`, `string`, `optional`, `algorithm` 등 적절히 사용
+
+### 리팩토링 순서 (README Activities 권장)
+1. 코드 스멜 분석 → 2. 네이밍·하드코드·전역 제거·함수 추출·중복 제거 → 3. 단위 테스트 → 4. 기능 개선(SRP) → 5. 회고
+
+## Testing (Google Test)
+- 테스트 파일: `src/test/cpp/SHealthBMITest.cpp`
+- **TDD**: 실패하는 테스트를 먼저 작성한 뒤 최소 구현으로 통과시킨다.
+- 테스트는 **단일 조건**당 하나, 이름은 `동작_조건_기대결과` 형태로 명확히.
+
+### 필수 테스트 영역
+1. BMI 계산 (키 cm → m 변환 포함)
+2. 연령대 평균 체중 보정 (weight=0)
+3. BMI 카테고리 분류 (경계값: 18.5, 23, 25)
+4. 연령대별 통계 비율
+5. 예외: 빈 파일, 잘못된 CSV, 연령대 내 유효 체중 없음, height=0 보정 후 케이스
+
+- 테스트는 `shealth_lib`에 링크; 테스트 전용 픽스처 데이터는 작은 인메모리 CSV 또는 임시 파일로 구성
+- 리팩토링 후 `ctest`가 모두 통과해야 함
+
+## AI assistant behavior
+- 응답·주석·커밋 메시지: 사용자가 한국어로 요청하면 한국어 사용
+- 코드 변경 제안 시 **도메인 규칙 표**와 **영향 받는 테스트**를 함께 언급
+- 대규모 재작성보다 **단계적 리팩토링 + 테스트 통과**를 우선
+- `.env`, 자격 증명 파일은 생성·커밋하지 않음
+- 사용자가 명시적으로 요청하기 전까지 `git commit` / `git push` 하지 않음
+- README의 `bmi.png` 분류 기준과 구현·테스트가 어긋나면 불일치를 지적하고 README 기준으로 맞출 것
+
+## Naming conventions
+- 클래스: `PascalCase` (`SHealth`, `BmiCalculator`)
+- 함수/메서드: `camelCase` 또는 기존 `calculateBmi` 스타일과 통일
+- 상수/enum: `k` prefix 또는 `SCREAMING_SNAKE` — 프로젝트 내 한 가지로 통일
+- 파일명: 클래스명과 일치 (`SHealth.h` / `SHealth.cpp`)
+
+## Do not
+- CMake/Google Test 설정을 불필요하게 바꾸지 않음 (필요 시만)
+- 실습용 코드 스멜을 사용자 요청 없이 한 번에 전부 제거하지 않음 (단계별 리팩토링 유지)
+- README·요구사항에 없는 외부 의존성 추가 금지
+- 테스트 없이 BMI 경계·보정 로직만 변경하지 않음

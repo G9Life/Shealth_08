@@ -1,0 +1,53 @@
+{
+  "tests": 7,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "SHealthBMITest",
+      "tests": 4,
+      "testsuite": [
+        {
+          "name": "ClassifyBmiCategories",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 20
+        },
+        {
+          "name": "ComputesBmiFromWeightAndHeight",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 29
+        },
+        {
+          "name": "ValidatesRecordConstraints",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 34
+        },
+        {
+          "name": "BelongsToAgeDecade",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 43
+        }
+      ]
+    },
+    {
+      "name": "SHealthLoadedDataFixture",
+      "tests": 3,
+      "testsuite": [
+        {
+          "name": "LoadSampleDataFile",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 51
+        },
+        {
+          "name": "AgeDecadeDistributionSumsToOneHundred",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 57
+        },
+        {
+          "name": "GetCategoryPercentAcceptsLegacyCategoryCode",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 66
+        }
+      ]
+    }
+  ]
+}
