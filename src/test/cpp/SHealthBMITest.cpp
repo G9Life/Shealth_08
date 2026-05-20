@@ -348,6 +348,66 @@ TEST_F(SHealthExceptionFixture, GivenUnloadedAnalyzer_WhenGetNormalBmiRecords_Th
     EXPECT_TRUE(normalRecords.empty());
 }
 
+TEST_F(SHealthExceptionFixture, GivenUnloadedAnalyzer_WhenGetOverallDistribution_ThenAllPercentsAreZero) {
+    // Given: analyzer without loadAndCalculate
+    SHealth analyzer;
+
+    // When: overall distribution is queried
+    const SHealth::AgeDecadeDistribution distribution = analyzer.getOverallDistribution();
+    const double normalPercent = analyzer.getOverallCategoryPercent(SHealth::BmiCategory::Normal);
+    const double overallSum = analyzer.sumOverallCategoryPercents();
+
+    // Then: all overall APIs yield zero
+    EXPECT_EQ(distribution.underweightPercent, 0.0);
+    EXPECT_EQ(distribution.normalPercent, 0.0);
+    EXPECT_EQ(distribution.overweightPercent, 0.0);
+    EXPECT_EQ(distribution.obesityPercent, 0.0);
+    EXPECT_EQ(normalPercent, 0.0);
+    EXPECT_EQ(overallSum, 0.0);
+}
+
+TEST_F(SHealthLoadedDataFixture,
+       GivenLoadedShealthDat_WhenGetOverallDistribution_ThenMatchesOverallCategoryPercentApi) {
+    // Given: shealth.dat is loaded (SetUp)
+    // When: overall distribution is fetched in one call
+    const SHealth::AgeDecadeDistribution distribution = analyzer_.getOverallDistribution();
+
+    // Then: each field matches getOverallCategoryPercent for the same category
+    EXPECT_EQ(distribution.underweightPercent,
+              analyzer_.getOverallCategoryPercent(SHealth::BmiCategory::Underweight));
+    EXPECT_EQ(distribution.normalPercent,
+              analyzer_.getOverallCategoryPercent(SHealth::BmiCategory::Normal));
+    EXPECT_EQ(distribution.overweightPercent,
+              analyzer_.getOverallCategoryPercent(SHealth::BmiCategory::Overweight));
+    EXPECT_EQ(distribution.obesityPercent,
+              analyzer_.getOverallCategoryPercent(SHealth::BmiCategory::Obesity));
+}
+
+TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenSummingOverallCategoryPercents_ThenTotalsOneHundred) {
+    // Given: shealth.dat is loaded (SetUp)
+    // When: overall category percents are summed
+    const double total = analyzer_.sumOverallCategoryPercents();
+
+    // Then: all loaded records sum to 100%
+    EXPECT_EQ(static_cast<int>(std::lround(total)), 100);
+}
+
+TEST_F(SHealthLoadedDataFixture,
+       GivenLoadedShealthDat_WhenGetOverallCategoryPercent_ThenMatchesNormalRecordsCount) {
+    // Given: shealth.dat is loaded (SetUp)
+    const std::vector<SHealth::HealthRecord> normalRecords = analyzer_.getNormalBmiRecords();
+
+    // When: overall normal percent is queried
+    const int expectedNormalPercent = static_cast<int>(std::lround(
+        static_cast<double>(normalRecords.size()) * 100.0 / static_cast<double>(recordCount_)));
+    const int actualNormalPercent = static_cast<int>(std::lround(
+        analyzer_.getOverallCategoryPercent(SHealth::BmiCategory::Normal)));
+
+    // Then: percent matches normal record count over total records
+    ASSERT_GT(normalRecords.size(), 0u);
+    EXPECT_EQ(actualNormalPercent, expectedNormalPercent);
+}
+
 TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenGetDistributionForInvalidAgeDecade_ThenAllPercentsAreZero) {
     // Given: shealth.dat is loaded (SetUp); 25 is not a valid decade key (20–70 step 10)
     // When: distribution is requested for an out-of-range decade

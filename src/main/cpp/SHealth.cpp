@@ -35,6 +35,7 @@ size_t SHealth::loadAndCalculate(const std::string& filename) {
     HeightImputer::imputeMissingHeights(records_);
     BmiDistributionAnalyzer::calculateBmis(records_);
     distributionsByDecade_ = BmiDistributionAnalyzer::computeDistributionsByAgeDecade(records_);
+    overallDistribution_ = BmiDistributionAnalyzer::computeDistributionForAll(records_);
 
     return records_.size();
 }
@@ -67,6 +68,28 @@ double SHealth::sumCategoryPercents(int ageDecade) const {
     double total = 0.0;
     for (BmiCategory category : kAllBmiCategories) {
         total += getCategoryPercent(ageDecade, category);
+    }
+    return total;
+}
+
+SHealth::AgeDecadeDistribution SHealth::getOverallDistribution() const {
+    if (records_.empty()) {
+        return AgeDecadeDistribution{};
+    }
+    return overallDistribution_;
+}
+
+double SHealth::getOverallCategoryPercent(BmiCategory category) const {
+    if (records_.empty()) {
+        return 0.0;
+    }
+    return BmiDistributionAnalyzer::percentForCategory(overallDistribution_, category);
+}
+
+double SHealth::sumOverallCategoryPercents() const {
+    double total = 0.0;
+    for (BmiCategory category : kAllBmiCategories) {
+        total += getOverallCategoryPercent(category);
     }
     return total;
 }

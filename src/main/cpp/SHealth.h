@@ -27,6 +27,9 @@ public:
     double getBmiRatio(int ageDecade, int categoryCode) const;
     AgeDecadeDistribution getDistributionForAgeDecade(int ageDecade) const;
     double sumCategoryPercents(int ageDecade) const;
+    AgeDecadeDistribution getOverallDistribution() const;
+    double getOverallCategoryPercent(BmiCategory category) const;
+    double sumOverallCategoryPercents() const;
     std::vector<HealthRecord> getNormalBmiRecords() const;
 
     static bool isValidRecord(int id, int age, double heightCm);
@@ -43,4 +46,5 @@ public:
 private:
     std::vector<HealthRecord> records_;
     std::unordered_map<int, AgeDecadeDistribution> distributionsByDecade_;
+    AgeDecadeDistribution overallDistribution_;
 };

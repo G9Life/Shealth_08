@@ -11,6 +11,7 @@ public:
     static void calculateBmis(std::vector<HealthRecord>& records);
     static std::unordered_map<int, AgeDecadeDistribution> computeDistributionsByAgeDecade(
         const std::vector<HealthRecord>& records);
+    static AgeDecadeDistribution computeDistributionForAll(const std::vector<HealthRecord>& records);
 
     static double percentForCategory(const AgeDecadeDistribution& distribution, BmiCategory category);
 

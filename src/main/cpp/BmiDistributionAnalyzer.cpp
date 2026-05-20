@@ -91,6 +91,19 @@ AgeDecadeDistribution BmiDistributionAnalyzer::computeDistributionForDecade(
     return toPercentDistribution(counts, memberCount);
 }
 
+AgeDecadeDistribution BmiDistributionAnalyzer::computeDistributionForAll(
+    const std::vector<HealthRecord>& records) {
+    CategoryCounts counts;
+    int memberCount = 0;
+
+    for (const HealthRecord& record : records) {
+        ++memberCount;
+        incrementCategoryCount(counts, BmiCalculator::classifyBmi(record.bmi));
+    }
+
+    return toPercentDistribution(counts, memberCount);
+}
+
 std::unordered_map<int, AgeDecadeDistribution> BmiDistributionAnalyzer::computeDistributionsByAgeDecade(
     const std::vector<HealthRecord>& records) {
     std::unordered_map<int, AgeDecadeDistribution> distributionsByDecade;

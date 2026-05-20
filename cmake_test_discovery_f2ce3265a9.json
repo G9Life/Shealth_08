@@ -1,5 +1,5 @@
 {
-  "tests": 29,
+  "tests": 33,
   "name": "AllTests",
   "testsuites": [
     {
@@ -40,7 +40,7 @@
     },
     {
       "name": "SHealthExceptionFixture",
-      "tests": 8,
+      "tests": 9,
       "testsuite": [
         {
           "name": "GivenNegativeId_WhenIsValidRecord_ThenReturnsFalse",
@@ -81,12 +81,17 @@
           "name": "GivenUnloadedAnalyzer_WhenGetNormalBmiRecords_ThenReturnsEmpty",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
           "line": 340
+        },
+        {
+          "name": "GivenUnloadedAnalyzer_WhenGetOverallDistribution_ThenAllPercentsAreZero",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 351
         }
       ]
     },
     {
       "name": "SHealthLoadedDataFixture",
-      "tests": 6,
+      "tests": 9,
       "testsuite": [
         {
           "name": "GivenLoadedShealthDat_WhenQueryAgeDecade20_ThenObesityPercentIsPositive",
@@ -114,9 +119,24 @@
           "line": 324
         },
         {
+          "name": "GivenLoadedShealthDat_WhenGetOverallDistribution_ThenMatchesOverallCategoryPercentApi",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 369
+        },
+        {
+          "name": "GivenLoadedShealthDat_WhenSummingOverallCategoryPercents_ThenTotalsOneHundred",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 386
+        },
+        {
+          "name": "GivenLoadedShealthDat_WhenGetOverallCategoryPercent_ThenMatchesNormalRecordsCount",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 395
+        },
+        {
           "name": "GivenLoadedShealthDat_WhenGetDistributionForInvalidAgeDecade_ThenAllPercentsAreZero",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 351
+          "line": 411
         }
       ]
     },
@@ -127,7 +147,7 @@
         {
           "name": "GivenAgeDecadeBoundaryAges_WhenBelongsToAgeDecade_ThenExpectedMembership",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 383
+          "line": 443
         }
       ]
     },
@@ -138,27 +158,27 @@
         {
           "name": "GivenShealth93730ZeroWeightRow_WhenImputedWithDecade50Average_ThenBmiMilliAndCategoryMatch",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 409
+          "line": 469
         },
         {
           "name": "GivenThreeMemberFixtureWithOneZeroWeight_WhenLoadAndCalculate_ThenPercentsReflectImputedBmis",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 426
+          "line": 486
         },
         {
           "name": "GivenDecadeWithOnlyZeroWeights_WhenLoadAndCalculate_ThenNoImputationAndAllUnderweight",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 465
+          "line": 525
         },
         {
           "name": "GivenLoadedShealthDat_WhenDecade50IncludesImputed93730_ThenObesityPercentIsPositive",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 483
+          "line": 543
         },
         {
           "name": "GivenDecadeAverageExcludesZeroWeights_WhenComputingImputedBmi_ThenAverageMatchesTwoValidMembers",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 504
+          "line": 564
         }
       ]
     },
@@ -169,17 +189,17 @@
         {
           "name": "GivenThreeMemberFixtureWithOneZeroHeight_WhenLoadAndCalculate_ThenBmiUsesDecadeAverageHeight",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 535
+          "line": 595
         },
         {
           "name": "GivenDecadeWithOnlyZeroHeights_WhenLoadAndCalculate_ThenNoImputationAndAllUnderweight",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 574
+          "line": 634
         },
         {
           "name": "GivenDecadeAverageExcludesZeroHeights_WhenComputingImputedBmi_ThenAverageMatchesTwoValidMembers",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
-          "line": 592
+          "line": 652
         }
       ]
     }
