@@ -27,6 +27,7 @@ public:
     double getBmiRatio(int ageDecade, int categoryCode) const;
     AgeDecadeDistribution getDistributionForAgeDecade(int ageDecade) const;
     double sumCategoryPercents(int ageDecade) const;
+    std::vector<HealthRecord> getNormalBmiRecords() const;
 
     static bool isValidRecord(int id, int age, double heightCm);
     static BmiCategory classifyBmi(double bmi);

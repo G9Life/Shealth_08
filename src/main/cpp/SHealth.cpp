@@ -70,3 +70,20 @@ double SHealth::sumCategoryPercents(int ageDecade) const {
     }
     return total;
 }
+
+std::vector<SHealth::HealthRecord> SHealth::getNormalBmiRecords() const {
+    if (records_.empty()) {
+        return {};
+    }
+
+    std::vector<HealthRecord> normalRecords;
+    normalRecords.reserve(records_.size());
+
+    for (const HealthRecord& record : records_) {
+        if (classifyBmi(record.bmi) == BmiCategory::Normal) {
+            normalRecords.push_back(record);
+        }
+    }
+
+    return normalRecords;
+}

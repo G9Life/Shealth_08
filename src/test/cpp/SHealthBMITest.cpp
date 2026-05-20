@@ -321,6 +321,33 @@ TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenGetDistributionForAge
               100);
 }
 
+TEST_F(SHealthLoadedDataFixture,
+       GivenLoadedShealthDat_WhenGetNormalBmiRecords_ThenEveryRecordIsNormalCategory) {
+    // Given: shealth.dat is loaded (SetUp)
+    // When: normal-BMI records are queried
+    const std::vector<SHealth::HealthRecord> normalRecords = analyzer_.getNormalBmiRecords();
+
+    // Then: every returned record is classified as normal and none are from other categories
+    ASSERT_GT(normalRecords.size(), 0u);
+    for (const SHealth::HealthRecord& record : normalRecords) {
+        EXPECT_EQ(SHealth::classifyBmi(record.bmi), SHealth::BmiCategory::Normal)
+            << "record id=" << record.id;
+        EXPECT_GT(record.bmi, 18.5);
+        EXPECT_LT(record.bmi, 23.0);
+    }
+}
+
+TEST_F(SHealthExceptionFixture, GivenUnloadedAnalyzer_WhenGetNormalBmiRecords_ThenReturnsEmpty) {
+    // Given: analyzer without loadAndCalculate
+    SHealth analyzer;
+
+    // When: normal-BMI records are queried
+    const std::vector<SHealth::HealthRecord> normalRecords = analyzer.getNormalBmiRecords();
+
+    // Then: no records are available
+    EXPECT_TRUE(normalRecords.empty());
+}
+
 TEST_F(SHealthLoadedDataFixture, GivenLoadedShealthDat_WhenGetDistributionForInvalidAgeDecade_ThenAllPercentsAreZero) {
     // Given: shealth.dat is loaded (SetUp); 25 is not a valid decade key (20–70 step 10)
     // When: distribution is requested for an out-of-range decade
