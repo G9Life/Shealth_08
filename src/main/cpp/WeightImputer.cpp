@@ -1,37 +1,11 @@
 #include "WeightImputer.h"
 
-#include "AgeDecadePolicy.h"
-
-double WeightImputer::averageWeightForDecade(const std::vector<HealthRecord>& records,
-                                             int ageDecade) {
-    double weightSum = 0.0;
-    int validWeightCount = 0;
-
-    for (const HealthRecord& record : records) {
-        if (!AgeDecadePolicy::belongsToAgeDecade(record.age, ageDecade) || record.weightKg == 0.0) {
-            continue;
-        }
-        weightSum += record.weightKg;
-        ++validWeightCount;
-    }
-
-    if (validWeightCount == 0) {
-        return 0.0;
-    }
-    return weightSum / validWeightCount;
-}
+#include "AgeDecadeImputer.h"
 
 void WeightImputer::imputeMissingWeights(std::vector<HealthRecord>& records) {
-    AgeDecadePolicy::forEachAgeDecade([&records](int ageDecade) {
-        const double averageWeight = averageWeightForDecade(records, ageDecade);
-        if (averageWeight == 0.0) {
-            return;
-        }
-
-        for (HealthRecord& record : records) {
-            if (AgeDecadePolicy::belongsToAgeDecade(record.age, ageDecade) && record.weightKg == 0.0) {
-                record.weightKg = averageWeight;
-            }
-        }
-    });
+    AgeDecadeImputer::imputeMissingByAgeDecade(
+        records,
+        [](const HealthRecord& record) { return record.weightKg; },
+        [](HealthRecord& record, double value) { record.weightKg = value; },
+        [](const HealthRecord& record) { return record.weightKg == 0.0; });
 }

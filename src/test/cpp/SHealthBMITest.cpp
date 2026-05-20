@@ -493,3 +493,91 @@ TEST_F(SHealthAgeImputationFixture,
     EXPECT_EQ(SHealth::classifyBmi(imputedBmi), SHealth::BmiCategory::Normal);
     EXPECT_EQ(zeroWeight, 0.0);
 }
+
+// --- Age-decade average height imputation ---
+
+class SHealthHeightImputationFixture : public ::testing::Test {
+protected:
+    size_t loadFixture(const char* relativePath) {
+        return analyzer_.loadAndCalculate(SHealth::resolveDataFilePath(relativePath));
+    }
+
+    SHealth analyzer_;
+};
+
+TEST_F(SHealthHeightImputationFixture,
+       GivenThreeMemberFixtureWithOneZeroHeight_WhenLoadAndCalculate_ThenBmiUsesDecadeAverageHeight) {
+    // Given: 3 members in the 50s; id=3 has height=0 → imputed to (110+95)/2 = 102.5 cm at weight 21 kg
+    const size_t recordCount = loadFixture("src/test/data/impute_three_members_zero_height.csv");
+    ASSERT_EQ(recordCount, 3u);
+
+    const double weightKg = 21.0;
+    const double imputedHeightCm = 102.5;
+
+    // When: decade-50 distribution is queried after height imputation
+    const int underweightPercent = static_cast<int>(
+        std::lround(analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Underweight)));
+    const int normalPercent = static_cast<int>(
+        std::lround(analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Normal)));
+    const int overweightPercent = static_cast<int>(
+        std::lround(analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Overweight)));
+
+    // Then: BMIs ~17.4 / ~23.3 / ~20.0 → Underweight / Overweight / Normal (one third each)
+    ASSERT_EQ(computeBmiMilli(weightKg, 110.0), 17355);
+    ASSERT_EQ(computeBmiMilli(weightKg, 95.0), 23269);
+    ASSERT_EQ(computeBmiMilli(weightKg, imputedHeightCm), 19988);
+    EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(weightKg, 110.0)),
+              SHealth::BmiCategory::Underweight);
+    EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(weightKg, 95.0)),
+              SHealth::BmiCategory::Overweight);
+    EXPECT_EQ(SHealth::classifyBmi(SHealth::computeBmi(weightKg, imputedHeightCm)),
+              SHealth::BmiCategory::Normal);
+    EXPECT_EQ(underweightPercent, 33);
+    EXPECT_EQ(normalPercent, 33);
+    EXPECT_EQ(overweightPercent, 33);
+    EXPECT_EQ(static_cast<int>(std::lround(analyzer_.sumCategoryPercents(50))), 100);
+
+    const SHealth::AgeDecadeDistribution distribution = analyzer_.getDistributionForAgeDecade(50);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.underweightPercent)), 33);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.normalPercent)), 33);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.overweightPercent)), 33);
+    EXPECT_EQ(static_cast<int>(std::lround(distribution.obesityPercent)), 0);
+}
+
+TEST_F(SHealthHeightImputationFixture,
+       GivenDecadeWithOnlyZeroHeights_WhenLoadAndCalculate_ThenNoImputationAndAllUnderweight) {
+    // Given: every member in the 50s has height=0 → average unavailable, no imputation
+    const size_t recordCount = loadFixture("src/test/data/impute_all_zero_heights.csv");
+    ASSERT_EQ(recordCount, 2u);
+
+    // When: BMI is computed from zero height (unchanged) and distribution is read
+    const double zeroHeightBmi = SHealth::computeBmi(70.0, 0.0);
+    const int underweightPercent = static_cast<int>(
+        std::lround(analyzer_.getCategoryPercent(50, SHealth::BmiCategory::Underweight)));
+
+    // Then: BMI stays 0 (underweight) and the decade is 100% underweight
+    ASSERT_EQ(zeroHeightBmi, 0.0);
+    EXPECT_EQ(SHealth::classifyBmi(zeroHeightBmi), SHealth::BmiCategory::Underweight);
+    EXPECT_EQ(underweightPercent, 100);
+    EXPECT_EQ(static_cast<int>(std::lround(analyzer_.sumCategoryPercents(50))), 100);
+}
+
+TEST_F(SHealthHeightImputationFixture,
+       GivenDecadeAverageExcludesZeroHeights_WhenComputingImputedBmi_ThenAverageMatchesTwoValidMembers) {
+    // Given: two valid heights (110, 95) and one zero — average must be 102.5, not (110+95+0)/3
+    const double weightKg = 21.0;
+    const double validHeightA = 110.0;
+    const double validHeightB = 95.0;
+    const double zeroHeight = 0.0;
+
+    // When: decade average is derived the same way as height imputation
+    const double manualAverage = (validHeightA + validHeightB) / 2.0;
+    const double imputedBmi = SHealth::computeBmi(weightKg, manualAverage);
+
+    // Then: zero is excluded from the mean and imputed BMI is normal
+    ASSERT_EQ(manualAverage, 102.5);
+    ASSERT_EQ(computeBmiMilli(weightKg, manualAverage), 19988);
+    EXPECT_EQ(bmiToMilli(imputedBmi), 19988);
+    EXPECT_EQ(SHealth::classifyBmi(imputedBmi), SHealth::BmiCategory::Normal);
+    EXPECT_EQ(zeroHeight, 0.0);
+}

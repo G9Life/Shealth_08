@@ -1,5 +1,5 @@
 {
-  "tests": 24,
+  "tests": 27,
   "name": "AllTests",
   "testsuites": [
     {
@@ -149,6 +149,27 @@
           "name": "GivenDecadeAverageExcludesZeroWeights_WhenComputingImputedBmi_ThenAverageMatchesTwoValidMembers",
           "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
           "line": 477
+        }
+      ]
+    },
+    {
+      "name": "SHealthHeightImputationFixture",
+      "tests": 3,
+      "testsuite": [
+        {
+          "name": "GivenThreeMemberFixtureWithOneZeroHeight_WhenLoadAndCalculate_ThenBmiUsesDecadeAverageHeight",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 508
+        },
+        {
+          "name": "GivenDecadeWithOnlyZeroHeights_WhenLoadAndCalculate_ThenNoImputationAndAllUnderweight",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 547
+        },
+        {
+          "name": "GivenDecadeAverageExcludesZeroHeights_WhenComputingImputedBmi_ThenAverageMatchesTwoValidMembers",
+          "file": "C:\\DEV\\Shealth_08\\src\\test\\cpp\\SHealthBMITest.cpp",
+          "line": 565
         }
       ]
     }

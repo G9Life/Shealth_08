@@ -3,6 +3,7 @@
 #include "BmiCalculator.h"
 #include "BmiDistributionAnalyzer.h"
 #include "HealthRecordCsvReader.h"
+#include "HeightImputer.h"
 #include "WeightImputer.h"
 
 bool SHealth::isValidRecord(int id, int age, double heightCm) {
@@ -31,6 +32,7 @@ size_t SHealth::loadAndCalculate(const std::string& filename) {
     }
 
     WeightImputer::imputeMissingWeights(records_);
+    HeightImputer::imputeMissingHeights(records_);
     BmiDistributionAnalyzer::calculateBmis(records_);
     distributionsByDecade_ = BmiDistributionAnalyzer::computeDistributionsByAgeDecade(records_);
 
