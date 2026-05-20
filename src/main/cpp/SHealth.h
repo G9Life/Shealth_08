@@ -5,40 +5,21 @@
 #include <unordered_map>
 #include <vector>
 
+#include "AgeDecadePolicy.h"
+#include "BmiTypes.h"
+#include "HealthRecord.h"
+
 class SHealth {
 public:
-    static constexpr int kMinAgeDecade = 20;
-    static constexpr int kMaxAgeDecade = 70;
-    static constexpr int kAgeDecadeSpan = 10;
+    static constexpr int kMinAgeDecade = AgeDecadePolicy::kMinAgeDecade;
+    static constexpr int kMaxAgeDecade = AgeDecadePolicy::kMaxAgeDecade;
+    static constexpr int kAgeDecadeSpan = AgeDecadePolicy::kAgeDecadeSpan;
 
-    enum class BmiCategory {
-        Underweight = 100,
-        Normal = 200,
-        Overweight = 300,
-        Obesity = 400
-    };
+    using BmiCategory = ::BmiCategory;
+    static constexpr std::array<BmiCategory, 4> kAllBmiCategories = ::kAllBmiCategories;
 
-    static constexpr std::array<BmiCategory, 4> kAllBmiCategories = {
-        BmiCategory::Underweight,
-        BmiCategory::Normal,
-        BmiCategory::Overweight,
-        BmiCategory::Obesity,
-    };
-
-    struct HealthRecord {
-        int id = 0;
-        int age = 0;
-        double weightKg = 0.0;
-        double heightCm = 0.0;
-        double bmi = 0.0;
-    };
-
-    struct AgeDecadeDistribution {
-        double underweightPercent = 0.0;
-        double normalPercent = 0.0;
-        double overweightPercent = 0.0;
-        double obesityPercent = 0.0;
-    };
+    using HealthRecord = ::HealthRecord;
+    using AgeDecadeDistribution = ::AgeDecadeDistribution;
 
     size_t loadAndCalculate(const std::string& filename);
     double getCategoryPercent(int ageDecade, BmiCategory category) const;
@@ -54,26 +35,10 @@ public:
 
     template <typename Callback>
     static void forEachAgeDecade(Callback&& callback) {
-        for (int ageDecade = kMinAgeDecade; ageDecade <= kMaxAgeDecade; ageDecade += kAgeDecadeSpan) {
-            callback(ageDecade);
-        }
+        AgeDecadePolicy::forEachAgeDecade(std::forward<Callback>(callback));
     }
 
 private:
-    static constexpr double kUnderweightMaxBmi = 18.5;
-    static constexpr double kNormalMaxBmi = 23.0;
-    static constexpr double kOverweightMaxBmi = 25.0;
-
     std::vector<HealthRecord> records_;
     std::unordered_map<int, AgeDecadeDistribution> distributionsByDecade_;
-
-    bool loadRecordsFromFile(const std::string& filename);
-    void imputeMissingWeightsByAgeDecade();
-    void calculateBmis();
-    void calculateDistributionsByAgeDecade();
-
-    double averageWeightForDecade(int ageDecade) const;
-    AgeDecadeDistribution computeDistributionForDecade(int ageDecade) const;
-
-    static std::vector<std::string> splitCsvLine(const std::string& line, char delimiter);
 };
